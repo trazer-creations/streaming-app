@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StreamIt - Watch Movies & TV Shows</title>
+    <style>
+        /* General Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #121212;
+            color: white;
+            text-align: center;
+        }
+
+        /* Search Bar */
+        #search-container {
+            margin: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+        }
+
+        select,
+        input,
+        button {
+            padding: 12px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+        }
+
+        select {
+            background: #222;
+            color: white;
+        }
+
+        input {
+            width: 300px;
+        }
+
+        button {
+            background: #e50914;
+            color: white;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        button:hover {
+            background: #b20710;
+        }
+
+        /* Results Grid */
+        #results {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+            padding: 20px;
+            justify-items: center;
+        }
+
+        /* Movie Card */
+        .movie-card {
+            width: 200px;
+            background: #1c1c1c;
+            border-radius: 10px;
+            overflow: hidden;
+            text-align: center;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+
+        .movie-card:hover {
+            transform: scale(1.05);
+        }
+
+        .movie-card img {
+            width: 100%;
+            height: 300px;
+            object-fit: cover;
+        }
+
+        .movie-card .no-image {
+            width: 100%;
+            height: 300px;
+            background: #333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            color: #777;
+        }
+
+        .movie-card h2 {
+            font-size: 16px;
+            padding: 10px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .movie-card p {
+            font-size: 14px;
+            padding-bottom: 10px;
+            color: #bbb;
+        }
+
+        /* Video Player */
+        #player {
+            margin-top: 20px;
+        }
+
+        iframe {
+            width: 80%;
+            height: 500px;
+            border: none;
+            border-radius: 10px;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 600px) {
+            #search-container {
+                flex-direction: column;
+            }
+
+            input {
+                width: 100%;
+            }
+
+            iframe {
+                width: 100%;
+                height: 300px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>StreamIt - Watch Movies & TV Shows</h1>
+    <div id="search-container">
+        <select id="typeSelect">
+            <option value="tv">TV Show</option>
+            <option value="movie">Movie</option>
+        </select>
+        <input type="text" id="searchQuery" placeholder="Search for a movie or show">
+        <button onclick="searchMovies()">Search</button>
+    </div>
+
+    <div id="player"></div>
+    <div id="results"></div>
+
+
+    <script>
+        async function searchMovies() {
+            const query = document.getElementById("searchQuery").value.trim();
+            if (!query) return alert("Please enter a search query!");
+
+            const apiUrl = `https://imdb.iamidiotareyoutoo.com/search?q=${query}`;
+            try {
+                const response = await fetch(apiUrl);
+                const data = await response.json();
+
+                if (!data.ok || !data.description.length) {
+                    document.getElementById("results").innerHTML = "<p>No results found.</p>";
+                    return;
+                }
+
+                displayResults(data.description);
+            } catch (error) {
+                console.error("Error fetching data:", error);
+            }
+        }
+
+        function displayResults(movies) {
+            const container = document.getElementById("results");
+            container.innerHTML = ""; // Clear previous results
+
+            movies.forEach(movie => {
+                if (!movie["#IMDB_ID"]) return;
+
+                const movieCard = document.createElement("div");
+                movieCard.classList.add("movie-card");
+                movieCard.onclick = () => loadVidSrc(movie["#IMDB_ID"]);
+
+                const title = document.createElement("h2");
+                title.textContent = movie["#TITLE"];
+
+                const year = document.createElement("p");
+                year.textContent = `Year: ${movie["#YEAR"] || "N/A"}`;
+
+                if (movie["#IMG_POSTER"]) {
+                    const poster = document.createElement("img");
+                    poster.src = movie["#IMG_POSTER"];
+                    poster.alt = `${movie["#TITLE"]} Poster`;
+                    movieCard.appendChild(poster);
+                } else {
+                    const noImage = document.createElement("div");
+                    noImage.classList.add("no-image");
+                    noImage.textContent = "No Image Available";
+                    movieCard.appendChild(noImage);
+                }
+
+                movieCard.appendChild(title);
+                movieCard.appendChild(year);
+                container.appendChild(movieCard);
+            });
+        }
+
+        function loadVidSrc(imdbID) {
+            const type = document.getElementById("typeSelect").value;
+            const url = type === "tv"
+                ? `https://vidsrc.me/embed/tv?imdb=${imdbID}`
+                : `https://vidsrc.me/embed/movie?imdb=${imdbID}`;
+
+            document.getElementById('player').innerHTML =
+                `<iframe src="${url}" allowfullscreen></iframe>`;
+        }
+    </script>
+
+</body>
+
+</html>
